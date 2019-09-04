@@ -4,7 +4,7 @@
 
 ### Add Cloud
 ```
-juju add-cloud test-cloud -f infrastructure/juju-implementation/examples/cloud_def_example.yaml 
+juju add-cloud test-cloud -f cloud_def_example.yaml 
 ```
 File content:
 ```yaml
@@ -20,7 +20,7 @@ clouds:
 
 ### Add credentials to cloud
 ```
-juju add-credential test-cloud -f infrastructure/juju-implementation/examples/credential_def_example.yaml 
+juju add-credential test-cloud -f credential_def_example.yaml 
 ```
 File content:
 ```yaml
@@ -39,6 +39,7 @@ credentials:
 ```
 juju metadata generate-image -d simplestreams -i 9ddfcfd5-78bf-41c3-acb3-7f87216***** -s bionic -r se-east-1 -u https://keystone.api.cloud.ipnett.se/v3
 ```
+This will create __simplestreams__ folder in the current directory.
 
 ### Create a bootstrap controller
 ```
@@ -50,9 +51,10 @@ Once the previous step is completed, you need to fix a juju GUI. Run the followi
 ```
 juju gui
 ```
-You will get a link and credentials for logging in your GUI.
+You will get a link and credentials for logging into your GUI.
 
 ### Fix juju bunde.yaml
+There is an example file in the examples folder.
 
 ### Deploy the bundle
 ```
@@ -75,4 +77,65 @@ juju status --color
 Once the previous step is completed, wait for 15 minutes and execute the following:
 ```
 juju scp kubernetes-master/0:config kube/config
+
+export KUBECONFIG=kube/config
+```
+This will create a __kube__ folder in the current directory.
+
+### Fix DNS and SSL certificate
+You need to have certbot installed first:
+```
+brew install certbot
+``` 
+Also, you need a DNS that supports TXT records. Then you can run the following command:
+```
+certbot certonly --manual --preferred-challenges=dns --email desislava@scaleoutsystems.com --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -d *.dev-001.scaleout.se
+```
+This will generate a TXT record that you need to add to the DNS. After this is done, press enter to continue. If everything has gone well, you have the certificate generated.
+
+### Create a secret.yaml
+Create a yaml file with the following structure:
+```yaml
+apiVersion: v1
+data:
+  tls.crt: 
+  tls.key: 
+kind: Secret
+metadata:
+  name: tls-secret
+type: Opaque
+```
+To generate tls.crt:
+```
+certbot certificates
+
+cat .../fullchain.pem | base64
+```
+To generate tls.key:
+```
+cat .../privkey.pem | base64
+```
+Then, you need to apply to kubernetes:
+```
+kubectl apply -f secret.yaml
+```
+
+### Modify the deployment.yaml file in the examples folder
+Replace tls.crt and tls.key with the values you generated in the previous step. Also, replace the host and hosts (under rules and tls respectively) with ingress.
+
+### Activate the ingress controller
+```
+juju config kubernetes-worker ingress=true
+
+juju expose kubernetes-worker
+```
+
+### Set allow-privileged to true
+```
+juju config kubernetes-master allow-privileged=true
+```
+
+### Deploy rancher
+```
+kubectl apply -f deployment.yaml
 ```
