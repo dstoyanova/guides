@@ -38,13 +38,11 @@ credentials:
 ### Generate image metadata
 ```
 juju metadata generate-image -d simplestreams -i 9ddfcfd5-78bf-41c3-acb3-7f87216***** -s bionic -r se-east-1 -u https://keystone.api.cloud.ipnett.se/v3
-
 ```
 
 ### Create a bootstrap controller
 ```
 juju bootstrap test-cloud test-controller --config network=d6ccc707-cacb-42a5-b547-f1f1518***** --config external-network=71b10496-2617-47ae-abbc-36239f0***** --config use-floating-ip=true --metadata-source simplestreams --bootstrap-constraints "mem=4G cores=2"
-
 ```
 
 ### Fix juju GUI
