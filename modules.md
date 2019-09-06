@@ -163,3 +163,70 @@ data:
 ```
 . create_secret-db.sh | kubectl create -f- -n submit-scaler
 ```
+
+## Setup Python Scaler
+1. Navigate to modules/PythonScaler
+2. Navigate to modules/PythonScaler/configs and run:
+```
+cp -r ~/.local/share/juju/
+```
+3. Edit and create secrets by:
+    1. Edit create_secret.sh 
+    ```bash
+    #!/bin/bash
+    JUJU_CONTROLLER_ENDPOINT=`echo -n 89.45.233.240:17070 | base64`
+    JUJU_USERNAME=`echo -n admin | base64`
+    JUJU_PASSWORD=`echo -n 37fc3807e59c4ea9f450d1c00d41611c | base64`
+    JUJU_CACERT=`cat tls.ca | base64`
+
+    echo "apiVersion: v1
+    kind: Secret
+    metadata:
+      name: python-scaler-secret
+    type: Opaque
+    data:
+      controller_endpoint: ${JUJU_CONTROLLER_ENDPOINT}
+      username: ${JUJU_USERNAME}
+      password: ${JUJU_PASSWORD}
+      cacert: ${JUJU_CACERT}"
+    ```
+    2. Edit tls.ca
+    ```
+    juju show-controller
+    ```
+    Extract the certificate data and put it in 'tls.ca':
+
+    ```
+    -----BEGIN CERTIFICATE-----
+    MIIDrDCCApSgAwIBAgIUGlx2FSZDDemI6CieiwoKESyKN/kwDQYJKoZIhvcNAQEL
+    BQAwbjENMAsGA1UEChMEanVqdTEuMCwGA1UEAwwlanVqdS1nZW5lcmF0ZWQgQ0Eg
+    Zm9yIG1vZGVsICJqdWp1LWNhIjEtMCsGA1UEBRMkZDhjNjE5YWYtNzRiMy00ZjY5
+    LTg2NWUtZDk2MDE1MWJmZGUyMB4XDTE5MDgyOTE0NDAxNFoXDTI5MDkwNTE0NDAx
+    NFowbjENMAsGA1UEChMEanVqdTEuMCwGA1UEAwwlanVqdS1nZW5lcmF0ZWQgQ0Eg
+    Zm9yIG1vZGVsICJqdWp1LWNhIjEtMCsGA1UEBRMkZDhjNjE5YWYtNzRiMy00ZjY5
+    LTg2NWUtZDk2MDE1MWJmZGUyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+    AQEAwQNUHHbIeOl2Oy8cn2dyUakhRt5R6hEdg0SoEAzSQT3YY30kgyRTP6j43rYp
+    akQ2qkoiidtYHAOZe//mCQFUCqwYRFX/jA6e9MB0Lx6F17GabTd/IBXO6DEJCyW+
+    occi0mPJ2xmnj+EpRMNZfPdCz3DMaty132ZgEkrmrIm5i9Av0OV8VEviz1ywRyBN
+    Pq1guDwep9tDZIjjCZUy7b/24Y86c30nHFKhROCIWuIVLRMFj3o39NvqEoBAlOW3
+    lf0HfRaBNoiQUdjoOzEg6p4VSXJiUD1BBEMYpVAdMcFpDlb9uSiYtYIY9tBt2mdH
+    fqrAcwlbqQDLV/Fk8svTMyHCuQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYD
+    VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUFXe/l2Gc768P7vHfC5D7pcdnSkEwDQYJ
+    KoZIhvcNAQELBQADggEBAE/jFjB+fefCA+mg+dLQWR0qaN8pHQNnRpYddaDh1FEj
+    sAj4APbgIsxxemwcxRZHxcPyY0QgMZZ04S0mZkcxVaOigAH4LtsYdRkxRTHlWlP5
+    crS645uz34su1tgU+DZj2ulpr/SQnY2QEXbSvo9RbXb3iZvknrBJs2ZGXGHCJFzw
+    VGee/jAiebHSwZIcNyZxlNRSJrTiWPs9QkrODiCDNNgZJBt6/lOs0Bz3cI5uyjMW
+    Mz8BGbMRqCen92CScrtxvBMS7n7W3prNsobRgMIhvqfwW9XhEW+zH7CLsFyaJCdk
+    53Qqd9Px90Hw7+emsaTZyTCYWpxNrDgKyFNMlWeCQbk=
+    -----END CERTIFICATE-----
+    ```
+    3. Then create the secret by:
+    ```
+    . create_secret.sh | kubectl create -f- -n submit-scaler
+    ```
+4. Make sure you have the Dockerfile and run:
+```
+docker build . -t docker-registry/resource-scaler:latest
+
+docker push docker-registry/resource-scaler:latest
+```
