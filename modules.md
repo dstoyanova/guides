@@ -226,7 +226,33 @@ cp -r ~/.local/share/juju/
     ```
 4. Make sure you have the Dockerfile and run:
 ```
-docker build . -t docker-registry/resource-scaler:latest
+docker login
 
-docker push docker-registry/resource-scaler:latest
+docker build . -t dstoyanova/resource-scaler:latest
+
+docker push dstoyanova/resource-scaler:latest
+```
+5. Edit values.yaml under .charts and run:
+```
+helm install .charts --name python-scaler -f .charts/values.yaml --namespace=submit-scaler
+```
+
+## Setup work queue
+1. Navigate to modules/argo-submit-server/workqueue
+2. Edit values.yaml
+3. Run the following
+```
+helm install --name rabbit-mq stable/rabbitmq -f values.yaml --namespace=submit-scaler
+```
+4. Enter username/password from values.yaml in the create_secret.sh and run:
+```
+. create_secret.sh | kubectl create -f- -n submit-scaler
+```
+
+## Setup argo submit server
+1. Navigate to: modules/argo-submit-server/go-client
+2. Edit argo-cli.go constant
+3. Copy your kube config to argo
+```
+cp ~/.kube/config config
 ```
